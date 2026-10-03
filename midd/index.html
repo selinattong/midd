@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f0">
+  <title>深度观察 · DeepFind</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1e2827;
+      --muted: #697471;
+      --paper: #f6f5f0;
+      --card: #fffefa;
+      --line: #e5e5dc;
+      --green: #315e4a;
+      --orange: #d77b4a;
+      --serif: Georgia, "Noto Serif SC", "Songti SC", serif;
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--paper); }
+    button, input { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; }
+    .site-header {
+      position: sticky; top: 0; z-index: 5;
+      border-bottom: 1px solid rgba(30, 40, 39, .1);
+      background: rgba(246, 245, 240, .94); backdrop-filter: blur(14px);
+    }
+    .header-inner, main, .footer-inner { width: min(1120px, calc(100% - 48px)); margin: 0 auto; }
+    .header-inner { height: 76px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand-mark {
+      display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
+      color: #f9f7ef; background: var(--green); font: 19px var(--serif);
+    }
+    .brand-name { font: 700 18px var(--serif); letter-spacing: .04em; }
+    .brand-caption { color: var(--muted); font-size: 10px; letter-spacing: .18em; margin-top: 3px; }
+    .header-tools { display: flex; align-items: center; gap: 14px; }
+    .back-button {
+      display: none; align-items: center; gap: 8px; border: 1px solid var(--line);
+      padding: 9px 14px; border-radius: 99px; color: var(--ink); background: var(--card);
+      cursor: pointer; font-size: 13px;
+    }
+    .back-button.visible { display: inline-flex; }
+    .edition { color: var(--muted); font-size: 12px; letter-spacing: .08em; }
+    main { min-height: calc(100vh - 150px); }
+    .home-hero { padding: 66px 0 34px; text-align: center; }
+    .eyebrow { color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: .2em; }
+    h1, h2, h3, p { margin-top: 0; }
+    .home-hero h1 { margin: 14px 0 10px; font: 500 clamp(34px, 6vw, 56px)/1.15 var(--serif); letter-spacing: .02em; }
+    .hero-copy { margin: 0 auto 28px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+    .search-form {
+      display: flex; width: min(660px, 100%); margin: 0 auto;
+      padding: 6px 7px 6px 19px; border: 1px solid #dbddd4; border-radius: 99px;
+      background: var(--card); box-shadow: 0 12px 36px rgba(42, 57, 49, .07);
+    }
+    .search-form:focus-within { border-color: #91a895; box-shadow: 0 0 0 4px rgba(49, 94, 74, .08); }
+    .search-form input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 14px; }
+    .search-form input::placeholder { color: #969d97; }
+    .search-form button {
+      border: 0; border-radius: 99px; padding: 11px 22px; color: white; background: var(--green);
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: background .2s, transform .2s;
+    }
+    .search-form button:hover { background: #234a38; transform: translateY(-1px); }
+    .suggestions { margin-top: 14px; color: var(--muted); font-size: 12px; }
+    .suggestions button { border: 0; padding: 4px 7px; color: var(--green); background: transparent; cursor: pointer; }
+    .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin: 28px 0 16px; }
+    .section-heading h2 { margin: 0; font: 500 25px var(--serif); }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 12px; }
+    .news-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .news-card {
+      display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--line);
+      border-radius: 10px; background: var(--card); text-decoration: none;
+      transition: transform .22s, box-shadow .22s, border-color .22s;
+    }
+    .news-card:hover { transform: translateY(-3px); border-color: #c5d0c4; box-shadow: 0 14px 35px rgba(28, 45, 35, .09); }
+    .news-image { display: block; width: 100%; aspect-ratio: 1.82; object-fit: cover; background: #e6e4dc; }
+    .news-body { padding: 19px 20px 21px; }
+    .meta { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
+    .meta-tag { color: var(--green); font-weight: 700; letter-spacing: .08em; }
+    .news-body h3 { margin: 0 0 9px; font: 600 21px/1.45 var(--serif); }
+    .news-body p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .read-more { display: inline-block; margin-top: 14px; color: var(--green); font-size: 12px; font-weight: 700; }
+    .promo-section { padding: 50px 0 52px; }
+    .promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .promo-card {
+      position: relative; display: block; overflow: hidden; min-height: 190px; border-radius: 10px;
+      background: #24332c; color: white; text-decoration: none;
+    }
+    .promo-card img { display: block; width: 100%; height: 215px; object-fit: cover; transition: transform .35s; }
+    .promo-card:hover img { transform: scale(1.035); }
+    .promo-caption {
+      position: absolute; inset: auto 0 0; padding: 35px 20px 17px;
+      background: linear-gradient(transparent, rgba(10, 17, 14, .83));
+    }
+    .promo-caption span { font-size: 10px; letter-spacing: .16em; opacity: .78; }
+    .promo-caption strong { display: block; margin-top: 5px; font: 500 19px var(--serif); }
+    .species-teaser {
+      display: grid; grid-template-columns: 145px 1fr; align-items: center; gap: 22px;
+      margin: 0 0 66px; padding: 17px; border: 1px solid var(--line); border-radius: 10px;
+      background: #efede4; text-decoration: none; transition: border-color .2s;
+    }
+    .species-teaser:hover { border-color: #a6b5a6; }
+    .species-teaser img { display: block; width: 145px; height: 145px; border-radius: 6px; object-fit: cover; object-position: center 55%; }
+    .species-teaser .eyebrow { margin-bottom: 9px; }
+    .species-teaser h3 { margin: 0 0 7px; font: 500 23px var(--serif); }
+    .species-teaser p { margin: 0; max-width: 570px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .empty-state { grid-column: 1 / -1; padding: 40px; border: 1px dashed #cfd2c9; border-radius: 10px; color: var(--muted); text-align: center; }
+    .case-board { width: min(660px, 100%); margin: 34px auto 58px; padding: 21px 23px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); text-align: left; }
+    .case-board-top { display: flex; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 13px; }
+    .case-board-top strong { font: 500 18px var(--serif); }
+    .case-board-top span { color: var(--muted); font-size: 10px; letter-spacing: .12em; }
+    .case-progress { height: 4px; margin: 10px 0 16px; overflow: hidden; border-radius: 4px; background: #e9e9e1; }
+    .case-progress span { display: block; height: 100%; background: var(--green); transition: width .35s; }
+    .case-steps { display: grid; gap: 9px; }
+    .case-step { display: flex; align-items: center; gap: 11px; color: var(--muted); font-size: 12px; }
+    .case-step i { display: grid; place-items: center; flex: 0 0 22px; height: 22px; border: 1px solid #d9ddd5; border-radius: 50%; color: #8a948d; font-size: 10px; font-style: normal; }
+    .case-step.done { color: var(--green); }
+    .case-step.done i { border-color: var(--green); color: white; background: var(--green); }
+    .case-next { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); color: #697471; font-size: 12px; line-height: 1.7; }
+    .discovered-links { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+    .discovered-link { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 99px; color: var(--green); background: #f8f8f2; font-size: 12px; text-decoration: none; }
+    .puzzle-box { margin: 32px 0 28px; padding: 22px; border: 1px solid #d8dfd3; border-left: 4px solid var(--green); border-radius: 8px; background: #f0f2e9; }
+    .puzzle-label { margin-bottom: 7px; color: var(--green); font-size: 10px; font-weight: 700; letter-spacing: .15em; }
+    .puzzle-box h2 { margin: 0 0 8px; font: 500 22px/1.5 var(--serif); }
+    .puzzle-box p { margin-bottom: 14px; color: #59645e; font-size: 13px; line-height: 1.8; }
+    .puzzle-box form { display: grid; gap: 11px; }
+    .puzzle-box label, .puzzle-box legend { color: #394740; font-size: 13px; font-weight: 600; }
+    .puzzle-box input[type="text"], .puzzle-box select {
+      width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #d3d8cf; border-radius: 5px; background: var(--card); color: var(--ink);
+    }
+    .puzzle-box button, .game-button {
+      justify-self: start; padding: 10px 16px; border: 0; border-radius: 5px; color: white; background: var(--green); font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .puzzle-box button:hover, .game-button:hover { background: #234a38; }
+    .puzzle-box fieldset { display: grid; gap: 11px; padding: 0; border: 0; }
+    .puzzle-box .answer-choice { display: flex; align-items: flex-start; gap: 9px; color: #59645e; font-size: 13px; font-weight: 400; line-height: 1.7; }
+    .answer-choice input { margin-top: 4px; accent-color: var(--green); }
+    .puzzle-feedback { min-height: 19px; margin: 0 !important; color: #a94f37 !important; font-size: 12px !important; }
+    .puzzle-feedback.success { color: var(--green) !important; }
+    .puzzle-solved { padding: 15px; border: 1px solid #c5d9c4; border-radius: 6px; color: var(--green); background: #f8fbf4; font-size: 13px; line-height: 1.8; }
+    .locked-result { grid-column: 1 / -1; padding: 24px; border: 1px dashed #cfd2c9; border-radius: 9px; background: #f4f3ed; }
+    .locked-result strong { display: block; margin-bottom: 7px; font: 500 19px var(--serif); }
+    .locked-result p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .reset-progress { display: block; margin: 18px 0 0 auto; padding: 5px 0; border: 0; color: #858d87; background: transparent; font-size: 11px; cursor: pointer; }
+    .reset-progress:hover { color: #a94f37; }
+    .page { max-width: 840px; margin: 0 auto; padding: 42px 0 70px; }
+    .article-kicker { margin-bottom: 13px; color: var(--green); font-size: 11px; font-weight: 700; letter-spacing: .18em; }
+    .page h1 { max-width: 760px; margin: 0 0 15px; font: 500 clamp(32px, 5vw, 47px)/1.3 var(--serif); }
+    .article-meta { margin-bottom: 24px; color: var(--muted); font-size: 12px; }
+    .article-cover { display: block; width: 100%; max-height: 470px; aspect-ratio: 1.82; object-fit: cover; border-radius: 9px; background: #e5e3da; }
+    .article-copy { max-width: 700px; margin: 27px auto 36px; }
+    .article-copy p { color: #46514d; font: 16px/2 var(--serif); margin-bottom: 18px; }
+    .article-copy h2 { margin: 28px 0 12px; font: 500 25px var(--serif); }
+    .article-figure { margin: 27px 0 32px; }
+    .article-inline-image { display: block; width: 100%; border-radius: 7px; }
+    .article-figure figcaption { padding-top: 8px; color: var(--muted); font-size: 11px; }
+    .inline-promo { margin: 34px 0; }
+    .inline-promo-label { margin-bottom: 9px; color: var(--muted); font-size: 10px; letter-spacing: .16em; }
+    .inline-promo .promo-card img { height: clamp(170px, 28vw, 260px); }
+    .related-link { display: inline-flex; align-items: center; gap: 8px; color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; }
+    .panel-page { max-width: 860px; margin: 0 auto; padding: 42px 0 72px; }
+    .panel-page .lead { color: var(--muted); font-size: 15px; line-height: 1.9; }
+    .forum-page { color: #d4eadc; background: #101a15; }
+    .forum-page .site-header { border-color: #2f4938; background: rgba(16, 26, 21, .95); }
+    .forum-page .brand, .forum-page .edition { color: #d4eadc; }
+    .forum-page .back-button { border-color: #2f4938; color: #d4eadc; background: #17241c; }
+    .forum-page .site-footer { border-color: #2f4938; color: #88ac91; }
+    .forum-page .panel-page { width: min(860px, calc(100% - 48px)); }
+    .forum-kicker { color: #7fce98; font-size: 11px; letter-spacing: .18em; }
+    .forum-page h1 { margin: 12px 0; font: 500 clamp(30px, 5vw, 44px) var(--serif); }
+    .forum-thread { margin-top: 27px; padding: 24px; border: 1px solid #2f4938; border-radius: 8px; background: #17241c; }
+    .forum-thread h2 { color: #a4e2b3; font: 500 21px/1.5 var(--serif); }
+    .forum-thread p { color: #c1d2c6; font: 14px/1.9 var(--serif); }
+    .forum-note { color: #88ac91 !important; font: 12px/1.8 "Microsoft YaHei", sans-serif !important; }
+    .forum-replies { margin-top: 24px; }
+    .forum-replies h2, .forum-compose h2 { margin-bottom: 12px; color: #a4e2b3; font: 500 19px var(--serif); }
+    .forum-comment { margin-top: 10px; padding: 16px; border: 1px solid #2a3c30; border-radius: 7px; background: #131f18; }
+    .forum-comment-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 7px; margin-bottom: 8px; font-size: 11px; }
+    .forum-comment-head strong { color: #a4e2b3; }
+    .forum-comment-head time { color: #76917c; }
+    .forum-comment p { margin: 0; color: #c1d2c6; font: 13px/1.8 "Microsoft YaHei", sans-serif; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .forum-compose { margin-top: 25px; padding: 19px; border: 1px solid #2f4938; border-radius: 8px; background: #17241c; }
+    .forum-compose form { display: grid; gap: 10px; }
+    .forum-compose label { color: #c1d2c6; font-size: 12px; }
+    .forum-compose input, .forum-compose textarea { width: 100%; border: 1px solid #344a39; border-radius: 5px; padding: 10px 12px; color: #e3efe5; background: #101a15; font: 13px/1.7 "Microsoft YaHei", sans-serif; }
+    .forum-compose textarea { min-height: 100px; resize: vertical; }
+    .forum-compose input:focus, .forum-compose textarea:focus { outline: 1px solid #7fce98; border-color: #7fce98; }
+    .forum-compose button { justify-self: start; padding: 10px 16px; border: 0; border-radius: 5px; color: #102018; background: #8cdaa0; font-size: 12px; font-weight: 700; cursor: pointer; }
+    .forum-compose button:disabled { cursor: not-allowed; opacity: .6; }
+    .forum-status { min-height: 20px; margin: 0; color: #a4e2b3; font-size: 12px; line-height: 1.7; }
+    .forum-status.error { color: #ff8686; }
+    .forum-config-note { padding: 11px 13px; border: 1px solid #594040; border-radius: 5px; color: #f0b3a8; background: #291a1a; font-size: 11px; line-height: 1.7; }
+    .eco-page h1 { color: #284e3d; }
+    .eco-hero { display: block; width: 100%; max-height: 420px; margin: 24px 0; border-radius: 9px; object-fit: cover; }
+    .action-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0; list-style: none; }
+    .action-list li { padding: 14px 16px; border: 1px solid var(--line); border-radius: 7px; background: var(--card); font-size: 13px; line-height: 1.7; }
+    .finale-page { position: relative; overflow: hidden; min-height: 76vh; margin: 22px 0; padding: clamp(28px, 7vw, 68px); border: 1px solid #671e25; border-radius: 12px; color: #f4eaea; background: radial-gradient(ellipse at 80% 0%, #51151b 0, #18090b 38%, #080708 80%); box-shadow: 0 20px 60px rgba(74, 13, 19, .22); }
+    .finale-page::before { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 20, 35, .025) 4px); content: ""; pointer-events: none; }
+    .finale-kicker { position: relative; color: #ff747a; font: 700 11px/1.7 Consolas, monospace; letter-spacing: .17em; }
+    .finale-page h1 { position: relative; margin: 15px 0 20px; color: #fff2f2; font: 700 clamp(31px, 6vw, 52px)/1.3 "Microsoft YaHei", sans-serif; text-shadow: 0 0 18px rgba(255, 48, 54, .35); }
+    .finale-page p { position: relative; max-width: 680px; color: #e2cfd0; font: 15px/2 "Microsoft YaHei", sans-serif; }
+    .finale-reveal { position: relative; max-width: 700px; margin: 25px 0; padding: 19px 21px; border-left: 3px solid #fa454e; color: #fff0f0; background: rgba(76, 17, 23, .55); font: 17px/1.9 var(--serif); }
+    .finale-page .action-list { position: relative; margin: 25px 0; }
+    .finale-page .action-list li { border-color: #56262b; color: #efdfe0; background: rgba(33, 16, 18, .9); }
+    .finale-page .action-list strong { color: #ff9da0; }
+    .finale-page .game-button { position: relative; margin-top: 8px; color: #fff; background: #a32731; }
+    .finale-page .game-button:hover { background: #c53440; }
+    .alien-log-backdrop { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 18px; background: rgba(6, 4, 5, .88); animation: logFadeIn .45s ease both; }
+    .alien-log { position: relative; width: min(620px, 100%); max-height: min(82vh, 740px); overflow-y: auto; padding: clamp(22px, 5vw, 38px); border: 1px solid #9d2730; border-radius: 5px; color: #f2e9e9; background: radial-gradient(ellipse at 100% 0%, #401216 0, #160b0d 44%, #090809 100%); box-shadow: 0 0 55px rgba(189, 30, 41, .28), inset 0 0 36px rgba(154, 20, 30, .08); animation: logGlitch .6s steps(2, end) 1; }
+    .alien-log::before { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(255, 40, 52, .04) 4px); content: ""; pointer-events: none; }
+    .alien-log-label, .alien-log time { position: relative; color: #ff717b; font: 11px/1.8 Consolas, monospace; letter-spacing: .13em; }
+    .alien-log h2 { position: relative; margin: 12px 0 17px; color: #ffe9ea; font: 700 clamp(24px, 5vw, 32px)/1.4 Consolas, "Microsoft YaHei", monospace; text-shadow: 0 0 13px #bd2936; }
+    .alien-log p { position: relative; color: #e0cdcf; font: 14px/1.95 Consolas, "Microsoft YaHei", monospace; }
+    .alien-log .alien-log-sign { color: #ff9299; }
+    .alien-log button { position: relative; margin-top: 9px; padding: 12px 19px; border: 1px solid #b3333d; border-radius: 4px; color: #fff; background: #751b24; font-size: 12px; cursor: pointer; }
+    .alien-log button:hover { background: #982630; }
+    @keyframes logFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes logGlitch { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-3px); } 45% { transform: translateX(2px); } 70% { transform: translateX(-1px); } }
+    .species-page { max-width: 930px; }
+    .species-layout { display: grid; grid-template-columns: minmax(0, .92fr) minmax(260px, 1.08fr); align-items: start; gap: 30px; margin-top: 26px; }
+    .species-image { width: 100%; max-height: 620px; object-fit: cover; object-position: center; border-radius: 8px; box-shadow: 0 12px 35px rgba(32, 37, 29, .12); }
+    .species-facts { padding: 23px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+    .species-facts h2 { margin: 0 0 18px; font: 500 24px var(--serif); }
+    .species-facts p { color: #56615a; font-size: 14px; line-height: 1.9; }
+    .fact { padding: 12px 0; border-top: 1px solid var(--line); }
+    .fact b { display: block; margin-bottom: 5px; color: var(--green); font-size: 11px; letter-spacing: .08em; }
+    .fact span { color: #56615a; font-size: 13px; line-height: 1.7; }
+    .site-footer { border-top: 1px solid var(--line); color: var(--muted); }
+    .footer-inner { display: flex; justify-content: space-between; gap: 16px; padding: 22px 0; font-size: 11px; }
+    @media (max-width: 680px) {
+      .header-inner, main, .footer-inner { width: min(100% - 32px, 520px); }
+      .header-inner { height: 66px; }
+      .edition { display: none; }
+      .home-hero { padding-top: 48px; }
+      .news-grid, .promo-grid { grid-template-columns: 1fr; }
+      .section-heading { align-items: start; flex-direction: column; gap: 5px; }
+      .news-body h3 { font-size: 19px; }
+      .promo-card img { height: 195px; }
+      .species-teaser { grid-template-columns: 100px 1fr; gap: 14px; padding: 12px; }
+      .species-teaser img { width: 100px; height: 116px; }
+      .species-teaser h3 { font-size: 19px; }
+      .species-teaser p { font-size: 12px; }
+      .page, .panel-page { padding-top: 30px; }
+      .species-layout { grid-template-columns: 1fr; }
+      .species-image { max-height: 520px; }
+      .action-list { grid-template-columns: 1fr; }
+      .case-board { padding: 18px; }
+      .puzzle-box { padding: 17px; }
+      .footer-inner { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#home" aria-label="返回 DeepFind 首页">
+        <span class="brand-mark">深</span>
+        <span><span class="brand-name">深度观察</span><span class="brand-caption">DEEPFIND · STORIES & DISCOVERY</span></span>
+      </a>
+      <div class="header-tools">
+        <button class="back-button" id="back-button" type="button" aria-label="返回上一页"><span aria-hidden="true">←</span> 上一步</button>
+        <span class="edition">自然 · 科学 · 未知</span>
+      </div>
+    </div>
+  </header>
+  <main id="app" aria-live="polite"></main>
+  <footer class="site-footer">
+    <div class="footer-inner"><span>深度观察 · 在事实与想象之间继续探索</span><span>DEEPFIND / 特别专题</span></div>
+  </footer>
+  <script src="supabase-config.js"></script>
+  <script>
+    const articles = [
+      {
+        id: "climate",
+        title: "全球气候变暖：热浪正在改写山川与日常",
+        category: "气候观察",
+        date: "特别报道 · 8 分钟阅读",
+        image: "image/全球气候变暖.jpg",
+        detailImage: "image/新闻图片.jpg",
+        keywords: ["全球气候变暖", "气候变化", "气候"],
+        summary: "气温上升与极端天气不再遥远。从持续高温到水资源紧张，气候变化正影响生态系统的每一个环节。",
+        body: [
+          "持续升高的全球平均气温，正在让热浪、干旱与强降雨变得更加频繁。山地、河流与森林相互连接，当其中一环承受压力，周边的生物与社区也会受到影响。",
+          "科学家通过长期温度、降水和冰川观测追踪这些变化。单次天气事件不能代表气候趋势，但不断刷新的高温纪录，提醒我们需要以更长的时间尺度关注地球。",
+          "减少化石燃料排放、提升能源效率、保护森林与湿地，都是减缓变暖的重要行动。个人选择无法独自解决气候问题，但集体行动可以推动更大的改变。"
+        ]
+      },
+      {
+        id: "alien",
+        title: "夜空异象：山脊上的神秘光点从何而来？",
+        category: "未知档案",
+        date: "深空专栏 · 6 分钟阅读",
+        image: "image/外星人.jpg",
+        keywords: ["外星人", "外星生命", "UFO", "夜空异象"],
+        summary: "夜色笼罩山谷，远处的光束划过云层。目击者的记录引发热议，也让我们重新思考如何辨别未知现象。",
+        body: [
+          "夜间的山地环境会让光线产生许多意想不到的效果。云层反射、远处的探照灯、流星和相机长曝光，都可能让普通光源看起来像是来自天空的奇异信号。",
+          "关于外星生命，人类至今仍没有经过证实的接触证据。研究人员会记录观测时间、天气、方向与设备参数，再与航空活动和天文资料进行交叉比对。",
+          "保持好奇，也保留求证的耐心。每一份清晰、可复核的观测资料，都比未经验证的结论更接近真相。"
+        ]
+      }
+    ];
+
+    const ads = {
+      alien: {
+        image: "image/外星人广告.jpg",
+        eyebrow: "未知信号 · 社群入口",
+        title: "加入外星狂热者论坛",
+        route: "forum",
+        alt: "外星人主题论坛广告"
+      },
+      eco: {
+        image: "image/环保广告.jpg",
+        eyebrow: "公益倡议 · 守护自然",
+        title: "从今天开始，为地球做一点改变",
+        route: "eco",
+        alt: "环保与野生动物保护公益广告"
+      }
+    };
+
+    const app = document.getElementById("app");
+    const backButton = document.getElementById("back-button");
+    const progressKey = "deepfind-investigation-v1";
+    const progress = loadProgress();
+    let routeStack = [];
+    let routeIndex = 0;
+
+    function loadProgress() {
+      const empty = { climate: false, alien: false, bibi: false };
+      try {
+        const saved = localStorage.getItem(progressKey);
+        if (!saved) return empty;
+        const parsed = JSON.parse(saved);
+        return {
+          climate: parsed.climate === true,
+          alien: parsed.alien === true,
+          bibi: parsed.bibi === true,
+          environment: parsed.environment === true,
+          logSeen: parsed.logSeen === true
+        };
+      } catch (error) {
+        console.error("调查进度无法读取，将从新档案开始。", error);
+        return empty;
+      }
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(progressKey, JSON.stringify(progress));
+      } catch (error) {
+        console.error("调查进度无法保存；继续游玩不会受影响。", error);
+      }
+    }
+
+    function unlocked(route) {
+      if (route === "home" || route === "article/climate") return true;
+      if (route === "article/alien") return progress.climate;
+      if (route === "bibi" || route === "forum") return progress.alien;
+      if (route === "eco") return progress.bibi;
+      return false;
+    }
+
+    function supabaseSettings() {
+      const config = window.DEEPFIND_SUPABASE_CONFIG;
+      if (!config || !config.url || !config.anonKey) return null;
+      try {
+        const parsed = new URL(config.url);
+        if (!["https:", "http:"].includes(parsed.protocol)) return null;
+        return { url: parsed.origin, anonKey: config.anonKey };
+      } catch (error) {
+        console.error("Supabase URL 格式无效。", error);
+        return null;
+      }
+    }
+
+    function currentRoute() {
+      return decodeURIComponent(location.hash.slice(1) || "home");
+    }
+
+    function navigate(route) {
+      routeStack = routeStack.slice(0, routeIndex + 1);
+      routeStack.push(route);
+      routeIndex = routeStack.length - 1;
+      history.pushState({ deepfind: true, routeIndex }, "", `#${encodeURIComponent(route)}`);
+      render(route);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function goBack() {
+      if (routeIndex > 0) {
+        history.back();
+      } else if (currentRoute() !== "home") {
+        navigate("home");
+      } else {
+        document.getElementById("search-input")?.focus();
+      }
+    }
+
+    function promoCard(ad, label = "专题推荐") {
+      return `<a class="promo-card" href="#${ad.route}" data-route="${ad.route}" aria-label="${ad.title}">
+        <img src="${ad.image}" alt="${ad.alt}">
+        <span class="promo-caption"><span>${label} · ${ad.eyebrow}</span><strong>${ad.title} ↗</strong></span>
+      </a>`;
+    }
+
+    function newsCard(article) {
+      return `<a class="news-card" href="#article/${article.id}" data-route="article/${article.id}">
+        <img class="news-image" src="${article.image}" alt="${article.title}">
+        <span class="news-body">
+          <span class="meta"><span class="meta-tag">${article.category}</span><span>·</span><span>${article.date}</span></span>
+          <h3>${article.title}</h3>
+          <p>${article.summary}</p>
+          <span class="read-more">阅读全文 <span aria-hidden="true">↗</span></span>
+        </span>
+      </a>`;
+    }
+
+    function missionBoard() {
+      const completed = Number(progress.climate) + Number(progress.alien) + Number(progress.bibi);
+      const nextStep = !progress.climate
+        ? "第一条线索：搜索「气候」，打开温度异常报道。"
+        : !progress.alien
+          ? "新线索已发现：搜索「招摇山」，追踪山脊上的异常信号。"
+          : !progress.bibi
+            ? "古籍档案已开放：搜索「獙獙」，辨认传说中的灵兽。"
+            : !progress.environment
+              ? "最后一项调查：打开环保专题，完成选择题，揭开异常信号背后的原因。"
+              : "结局已解锁：你找到了真相。可以返回论坛与其他调查员分享发现。";
+      const links = [
+        progress.alien ? `<a class="discovered-link" href="#forum" data-route="forum">↗ 外星狂热者论坛</a>` : "",
+        progress.bibi ? `<a class="discovered-link" href="#eco" data-route="eco">↗ 环保行动专题</a>` : ""
+      ].filter(Boolean).join("");
+      const cards = [
+        ["气候报告已解码", progress.climate],
+        ["山脊信号已确认", progress.alien],
+        ["獙獙古籍档案已破译", progress.bibi]
+      ];
+      return `<section class="case-board" aria-label="调查进度">
+        <div class="case-board-top"><strong>未结档案 · 招摇山信号</strong><span>CASE 01 / ${completed} OF 3</span></div>
+        <div class="case-progress" aria-label="调查进度 ${completed} / 3"><span style="width:${completed / 3 * 100}%"></span></div>
+        <div class="case-steps">${cards.map((card, index) => `<div class="case-step ${card[1] ? "done" : ""}"><i>${card[1] ? "✓" : `0${index + 1}`}</i>${card[0]}</div>`).join("")}</div>
+        <p class="case-next">${nextStep}</p>
+        ${links ? `<div class="discovered-links" aria-label="已解锁专题">${links}</div>` : ""}
+        <button class="reset-progress" type="button" data-reset-game>重新开始调查</button>
+      </section>`;
+    }
+
+    function renderHome(query = "") {
+      const normalized = query.trim().toLocaleLowerCase();
+      const climateMatch = ["全球气候变暖", "气候变化", "气候", "温室效应"].some(term => normalized.includes(term));
+      const alienMatch = ["招摇山", "外星人", "外星生命", "ufo", "夜空异象", "异常信号"].some(term => normalized.includes(term));
+      const bibiMatch = ["山海经", "獙獙", "bibi"].some(term => normalized.includes(term));
+      let results = "";
+      let resultMessage = "";
+
+      if (climateMatch) {
+        results = newsCard(articles[0]);
+      } else if (alienMatch && progress.climate) {
+        results = newsCard(articles[1]);
+      } else if (alienMatch) {
+        resultMessage = `<div class="locked-result"><strong>档案尚未发现：山脊异常信号</strong><p>这条线索还处于加密状态。先完成气候报道中的温度读数校验，再回到搜索框检索「招摇山」。</p></div>`;
+      } else if (bibiMatch && progress.climate && progress.alien) {
+        results = `<a class="news-card" href="#bibi" data-route="bibi">
+            <img class="news-image" src="image/bibi.jpg" alt="古籍图鉴中的獙獙">
+            <span class="news-body"><span class="meta"><span class="meta-tag">山海经 · 灵兽图鉴</span></span>
+            <h3>獙獙（BIBI）物种介绍</h3><p>查看古籍灵兽的图像档案与专题设定。</p><span class="read-more">查看档案 ↗</span></span>
+          </a>`;
+      } else if (bibiMatch) {
+        resultMessage = `<div class="locked-result"><strong>古籍档案仍被封存</strong><p>先从气候报道追踪招摇山信号。破译异常信号后，搜索「獙獙」即可打开古籍档案。</p></div>`;
+      } else if (normalized) {
+        resultMessage = `<div class="empty-state">暂未找到相关档案。当前可用的起始线索是「气候」。</div>`;
+      }
+
+      app.innerHTML = `<section class="home-hero">
+          <div class="eyebrow">调查档案 01 · 未知信号</div>
+          <h1>一条线索，<br>打开另一个世界</h1>
+          <p class="hero-copy">档案库受到干扰。搜索已知线索，逐步恢复隐藏记录。</p>
+          <form class="search-form" id="search-form" role="search">
+            <input id="search-input" type="search" value="${escapeHTML(query)}" placeholder="输入线索：试试「气候」…" aria-label="搜索档案线索">
+            <button type="submit">搜索</button>
+          </form>
+        </section>
+        ${normalized ? `<section aria-labelledby="results-heading">
+          <div class="section-heading"><h2 id="results-heading">检索结果</h2><p>关键词：${escapeHTML(query.trim())}</p></div>
+          <div class="news-grid">${results || resultMessage}</div>
+        </section>` : ""}
+        ${missionBoard()}`;
+    }
+
+    function climatePuzzle() {
+      if (progress.climate) {
+        return `<div class="puzzle-solved"><strong>✓ 温度读数已校验。</strong><br>报告中的异常值是 +2.0°C。搜索「招摇山」，继续追踪报道里提到的山地信号。
+          <div><button class="game-button" type="button" data-search="招摇山">带着新线索返回搜索</button></div>
+        </div>`;
+      }
+      return `<section class="puzzle-box">
+        <div class="puzzle-label">现场解码 · 01 / 温度读数</div>
+        <h2>报告图上的温度异常是多少？</h2>
+        <p>观察本页的气候新闻图片，找到右上角标出的全球温度异常值。输入数字即可，不需要输入单位。</p>
+        <form data-puzzle="climate">
+          <label for="climate-answer">温度异常读数（°C）</label>
+          <input id="climate-answer" name="answer" type="text" inputmode="decimal" autocomplete="off" placeholder="例如：1.5" required>
+          <button type="submit">校验读数</button>
+          <p class="puzzle-feedback" aria-live="polite"></p>
+        </form>
+      </section>`;
+    }
+
+    function alienPuzzle() {
+      if (progress.alien) {
+        return `<div class="puzzle-solved"><strong>✓ 目击记录已归档。</strong><br>现有资料不能证明光束来自外星文明。现场笔记还抄录了一段古籍特征：狐形、有翼，出现时伴随旱象。搜索「獙獙」继续调查。
+          <div><button class="game-button" type="button" data-search="獙獙">带着古籍线索返回搜索</button></div>
+        </div>`;
+      }
+      return `<section class="puzzle-box">
+        <div class="puzzle-label">现场解码 · 02 / 证据判断</div>
+        <h2>这束光，能证明外星人到访了吗？</h2>
+        <p>结合报道里的观测记录，选择目前最可靠的结论。完成后，论坛信号和古籍线索将会出现。</p>
+        <form data-puzzle="alien">
+          <fieldset>
+            <legend>应该如何记录这条目击信息？</legend>
+            <label class="answer-choice"><input type="radio" name="answer" value="confirmed" required> 光束已经证实外星文明到访</label>
+            <label class="answer-choice"><input type="radio" name="answer" value="unverified"> 来源尚未确认；记录时间、天气、方向并继续核实</label>
+          </fieldset>
+          <button type="submit">提交判断</button>
+          <p class="puzzle-feedback" aria-live="polite"></p>
+        </form>
+      </section>`;
+    }
+
+    function renderArticle(id) {
+      const article = articles.find(item => item.id === id);
+      if (!article) return renderNotFound();
+      const puzzle = id === "climate" ? climatePuzzle() : alienPuzzle();
+      const promo = id === "alien" && progress.alien
+        ? `<div class="inline-promo"><div class="inline-promo-label">你发现了一条新的插入式广告</div>${promoCard(ads.alien, "新发现 · 社群入口")}</div>`
+        : "";
+      app.innerHTML = `<article class="page">
+        <div class="article-kicker">${article.category} / DEEPFIND FEATURE</div>
+        <h1>${article.title}</h1>
+        <div class="article-meta">${article.date}　·　深度观察编辑部</div>
+        <img class="article-cover" src="${article.detailImage || article.image}" alt="${article.id === "climate" ? "气候变暖新闻报道画面" : article.title}">
+        <div class="article-copy">
+          ${article.body.slice(0, 2).map(text => `<p>${text}</p>`).join("")}
+          ${id === "climate" ? `<figure class="article-figure">
+            <img class="article-inline-image" src="image/全球气候变暖.jpg" alt="全球气候异常与高温影响的专题图片">
+            <figcaption>全球气候异常专题图像 · 深度观察图档</figcaption>
+          </figure>` : ""}
+          <h2>${id === "climate" ? "把关注变成行动" : "让证据带我们接近答案"}</h2>
+          <p>${article.body[2]}</p>
+          ${puzzle}
+          ${promo}
+        </div>
+      </article>`;
+    }
+
+    function renderForum() {
+      document.body.classList.add("forum-page");
+      app.innerHTML = `<section class="panel-page">
+        <div class="forum-kicker">DEEP SPACE WATCHERS · 社群档案</div>
+        <h1>外星狂热者论坛</h1>
+        <p class="lead">欢迎来到未知信号观察站。请把猜想当作猜想，把可验证的记录留给所有人一起讨论。</p>
+        <div class="forum-thread">
+          <div class="forum-kicker">置顶讨论 · 信号与目击记录</div>
+          <h2>招摇山夜空的蓝绿色光束：你看到了什么？</h2>
+          <p>昨晚有观察者报告，山脊附近出现短暂光点。现阶段还没有足够信息判断来源，欢迎补充观测时间、天气、拍摄方向与原始影像。</p>
+          <p class="forum-note">讨论守则：尊重不同观点；区分亲历记录和转述；不发布他人隐私或未经核实的个人信息。</p>
+        </div>
+        <section class="forum-replies" aria-labelledby="forum-replies-heading">
+          <h2 id="forum-replies-heading">跟帖回复 <span class="forum-note">/ 楼主与观测者</span></h2>
+          <div id="forum-comments" aria-live="polite"></div>
+          <p class="forum-status" id="forum-load-status" role="status">正在接收论坛信号…</p>
+        </section>
+        <section class="forum-compose" aria-labelledby="forum-compose-heading">
+          <h2 id="forum-compose-heading">留下你的观察</h2>
+          <p class="forum-note">使用论坛昵称即可，不需要填写邮箱或真实姓名。请分享观察与环保想法，不要发布私人信息。</p>
+          <div id="forum-config-note" class="forum-config-note" hidden>共享留言尚未连接：配置 Supabase 后，所有玩家即可读取和发送评论。</div>
+          <form id="forum-comment-form">
+            <label for="forum-nickname">论坛昵称（最多 24 字）</label>
+            <input id="forum-nickname" name="nickname" maxlength="24" autocomplete="nickname" placeholder="例如：夜航观测员" required>
+            <label for="forum-message">你的回复（最多 500 字）</label>
+            <textarea id="forum-message" name="message" maxlength="500" placeholder="你觉得这些异常信号，和我们对环境的影响有什么关系？" required></textarea>
+            <button id="forum-submit" type="submit">发布回复</button>
+            <p class="forum-status" id="forum-submit-status" role="status"></p>
+          </form>
+        </section>
+        <p style="margin-top:24px"><a class="related-link" href="#article/alien" data-route="article/alien">← 返回外星人新闻</a></p>
+      </section>`;
+      const config = supabaseSettings();
+      const form = document.getElementById("forum-comment-form");
+      form.querySelectorAll("input, textarea, button").forEach(control => { control.disabled = !config; });
+      document.getElementById("forum-config-note").hidden = Boolean(config);
+      renderForumComments(demoForumComments());
+      loadForumComments();
+    }
+
+    function demoForumComments() {
+      return [
+        { nickname: "楼主·夜航观测员", message: "昨晚 22:14 在山脚看见一道蓝绿色的光，只有十几秒。我会先核对天气和附近的照明设施，不急着下结论。", created_at: "2026-10-02T22:35:00Z" },
+        { nickname: "星图边缘", message: "我更好奇这附近的山林为什么这么干。也许该把降雨和水库数据一起贴出来，光靠一张照片很难确定来源。", created_at: "2026-10-02T22:48:00Z" },
+        { nickname: "纸箱里的土星", message: "如果真有观察员在看地球，他们可能先注意到的不是飞船，而是河流变少、夏天越来越热吧。", created_at: "2026-10-02T23:02:00Z" },
+        { nickname: "银河温室", message: "上周我和朋友去山里捡了一袋塑料瓶。游客留下的垃圾，比我想象中多得多。希望讨论神秘光点时，也别忘了眼前的环境。", created_at: "2026-10-02T23:19:00Z" },
+        { nickname: "阿澈的旧望远镜", message: "支持先查证。记录时间、方向、天气，再看看是否有飞机或探照灯活动。把能重复验证的资料分享出来最有帮助。", created_at: "2026-10-03T00:12:00Z" }
+      ];
+    }
+
+    function renderForumComments(comments) {
+      const target = document.getElementById("forum-comments");
+      if (!target) return;
+      target.innerHTML = comments.map(comment => {
+        const timestamp = Date.parse(comment.created_at);
+        const timeLabel = Number.isNaN(timestamp) ? "观测者留言" : new Date(timestamp).toLocaleString("zh-CN", { dateStyle: "short", timeStyle: "short" });
+        return `<article class="forum-comment">
+          <div class="forum-comment-head"><strong>${escapeHTML(comment.nickname)}</strong><time>${escapeHTML(timeLabel)}</time></div>
+          <p>${escapeHTML(comment.message)}</p>
+        </article>`;
+      }).join("");
+    }
+
+    function setForumStatus(message, isError = false, elementId = "forum-load-status") {
+      const status = document.getElementById(elementId);
+      if (!status) return;
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+
+    async function loadForumComments() {
+      const config = supabaseSettings();
+      if (!config) {
+        setForumStatus("以下为论坛故事中的虚构示例留言；连接共享数据库后会在此显示玩家回复。");
+        return;
+      }
+      setForumStatus("正在同步玩家留言…");
+      try {
+        const response = await fetch(`${config.url}/rest/v1/forum_comments?select=id,nickname,message,created_at&order=created_at.desc&limit=50`, {
+          headers: { apikey: config.anonKey, Authorization: `Bearer ${config.anonKey}` }
+        });
+        if (!response.ok) throw new Error(`论坛读取失败（HTTP ${response.status}）。请检查 Supabase 表与读取策略。`);
+        const comments = await response.json();
+        if (!Array.isArray(comments)) throw new Error("论坛服务器返回了无法识别的留言格式。");
+        renderForumComments([...comments, ...demoForumComments()]);
+        setForumStatus(`已同步 ${comments.length} 条玩家回复；下方另有故事示例留言。`);
+      } catch (error) {
+        console.error("论坛留言读取失败。", error);
+        renderForumComments(demoForumComments());
+        setForumStatus(`${error.message || "无法连接共享论坛。"} 当前显示故事示例留言。`, true);
+      }
+    }
+
+    async function submitForumComment(form) {
+      const config = supabaseSettings();
+      if (!config) {
+        setForumStatus("共享论坛尚未配置，留言没有发送。", true, "forum-submit-status");
+        return;
+      }
+      const data = new FormData(form);
+      const nickname = String(data.get("nickname") || "").trim();
+      const message = String(data.get("message") || "").trim();
+      if (!nickname || nickname.length > 24 || !message || message.length > 500) {
+        setForumStatus("请填写昵称与留言，并确认长度符合提示。", true, "forum-submit-status");
+        return;
+      }
+      const submitButton = document.getElementById("forum-submit");
+      submitButton.disabled = true;
+      setForumStatus("正在发布…", false, "forum-submit-status");
+      try {
+        const response = await fetch(`${config.url}/rest/v1/forum_comments`, {
+          method: "POST",
+          headers: {
+            apikey: config.anonKey,
+            Authorization: `Bearer ${config.anonKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal"
+          },
+          body: JSON.stringify({ nickname, message })
+        });
+        if (!response.ok) throw new Error(`留言发布失败（HTTP ${response.status}）。请稍后重试。`);
+        form.reset();
+        setForumStatus("回复已发布，正在同步所有玩家的讨论。", false, "forum-submit-status");
+        await loadForumComments();
+      } catch (error) {
+        console.error("论坛留言发布失败。", error);
+        setForumStatus(error.message || "无法连接共享论坛，留言未发送。", true, "forum-submit-status");
+      } finally {
+        submitButton.disabled = false;
+      }
+    }
+
+    function renderEco() {
+      if (progress.environment) {
+        renderEnding();
+        return;
+      }
+      app.innerHTML = `<section class="panel-page eco-page">
+        <div class="article-kicker">公益专题 / PROTECT OUR HOME</div>
+        <h1>守护自然，从身边开始</h1>
+        <p class="lead">每一条河流、每一片森林和每一种野生动物，都与我们共享同一个家园。</p>
+        <img class="eco-hero" src="${ads.eco.image}" alt="${ads.eco.alt}">
+        <section class="puzzle-box" style="margin-top:26px">
+          <div class="puzzle-label">最终调查 · 04 / 环境影响</div>
+          <h2>哪种情况会对海洋生物造成更持久的直接伤害？</h2>
+          <p>请比较具体的处置方式，而不是只比较材料名称。选择完成后，外星探测日志将公布最终结论。</p>
+          <form data-puzzle="environment">
+            <fieldset>
+              <legend>选择影响更大的情境</legend>
+              <label class="answer-choice"><input type="radio" name="answer" value="plastic" required> 一次性塑料袋被丢进海里，长期漂流、碎裂并可能被动物误食</label>
+              <label class="answer-choice"><input type="radio" name="answer" value="paper"> 干净的纸包装被分类回收，再制成纸制品</label>
+            </fieldset>
+            <button type="submit">提交最终调查</button>
+            <p class="puzzle-feedback" aria-live="polite"></p>
+          </form>
+        </section>
+        <div class="article-copy" style="margin-left:0">
+          <h2>让关心成为日常</h2>
+          <p>减少一次性用品、节约能源与用水、支持负责任的消费选择，也可以参与本地的生态修复与野生动物保护行动。小小的日常改变，和社区及公共政策的努力相互连接。</p>
+          <ul class="action-list">
+            <li><strong>少一点浪费</strong><br>自备水杯和购物袋，优先选择耐用、可重复使用的物品。</li>
+            <li><strong>节约能源</strong><br>离开房间时关闭不需要的灯与设备，合理设置空调温度。</li>
+            <li><strong>亲近自然</strong><br>在户外不留下垃圾，不采摘野生植物，不打扰野生动物。</li>
+            <li><strong>分享可靠信息</strong><br>转发环保消息前核对来源，让科学知识帮助更多人行动。</li>
+          </ul>
+        </div>
+        <a class="related-link" href="#article/climate" data-route="article/climate">← 阅读全球气候变暖报道</a>
+      </section>`;
+    }
+
+    function renderEnding() {
+      app.innerHTML = `<section class="panel-page">
+        <article class="finale-page">
+          <div class="finale-kicker">DEEP SPACE WATCHERS · FINAL REPORT / 信号已归档</div>
+          <h1>恭喜你，找到了真相。</h1>
+          <p>所有档案交叉比对完成。山脊上的访客确实在观察地球，却不是气候异常的制造者。</p>
+          <div class="finale-reveal">热浪、干旱与环境恶化的真正推手，不是外星来访，而是人类长期累积的排放、浪费与对自然的忽视。</div>
+          <p>那份红色日志并非入侵警告，而是一名探测员对地球发出的最后提醒。最可怕的不是宇宙深处有什么，而是我们已经看见身边的变化，却选择不去改变。</p>
+          <ul class="action-list">
+            <li><strong>少用一次性塑料</strong><br>重复使用物品，妥善分类和处理垃圾。</li>
+            <li><strong>减少能源浪费</strong><br>关闭闲置电器，支持更清洁的能源选择。</li>
+            <li><strong>守护自然栖息地</strong><br>支持生态保护，不干扰野生动物。</li>
+            <li><strong>把真相告诉更多人</strong><br>分享可靠信息，让更多人加入行动。</li>
+          </ul>
+          <button class="game-button" type="button" data-route="forum">带着真相返回论坛</button>
+        </article>
+      </section>`;
+    }
+
+    function bibiPuzzle() {
+      if (progress.bibi) {
+        return `<div class="puzzle-solved"><strong>✓ 古今对照完成，档案已解锁。</strong><br>古籍中的灵兽传说提醒我们留意干旱与生态变化；传说是文化线索，现代气候结论仍需科学观测。
+          <div class="inline-promo"><div class="inline-promo-label">新发现的公益插播</div>${promoCard(ads.eco, "新发现 · 环保行动")}</div>
+        </div>`;
+      }
+      return `<section class="puzzle-box">
+        <div class="puzzle-label">现场解码 · 03 / 古今对照</div>
+        <h2>把古籍描述与档案线索配对</h2>
+        <p>读完獙獙档案，为两条记载选择最贴近的对应项，完成后即可打开最后一条环保专题。</p>
+        <form data-puzzle="bibi">
+          <label for="bibi-drought">「见则天下大旱」对应哪类自然现象？</label>
+          <select id="bibi-drought" name="drought" required>
+            <option value="">选择一项…</option>
+            <option value="drought">长期干旱与水资源紧张</option>
+            <option value="aurora">夜间出现极光</option>
+          </select>
+          <label for="bibi-shape">「其状如狐而有翼」描述的是什么？</label>
+          <select id="bibi-shape" name="shape" required>
+            <option value="">选择一项…</option>
+            <option value="fox">长着翅膀的狐形传说生物</option>
+            <option value="satellite">用于观测天气的人造卫星</option>
+          </select>
+          <button type="submit">提交古今对照</button>
+          <p class="puzzle-feedback" aria-live="polite"></p>
+        </form>
+      </section>`;
+    }
+
+    function renderBibi() {
+      app.innerHTML = `<article class="page species-page">
+        <div class="article-kicker">山海经 · 南山经 / 灵兽档案 001</div>
+        <h1>獙獙（BIBI）</h1>
+        <div class="article-meta">古代志怪传说 · 图像与想象档案</div>
+        <div class="species-layout">
+          <img class="species-image" src="image/bibi.jpg" alt="古籍风格的有翼灵兽插画">
+          <section class="species-facts">
+            <h2>一只来自古籍想象的灵兽</h2>
+            <p>在本专题的故事设定中，獙獙是一种外形似狐、拥有双翼的神异生物。图片以古籍图谱的方式呈现它的形象，邀请读者走进《山海经》的奇异世界。</p>
+            <div class="fact"><b>档案类别</b><span>山海经题材 · 传说生物（非现实物种）</span></div>
+            <div class="fact"><b>形象特征</b><span>狐形、覆羽、双翼；本页介绍依据专题插画与故事设定。</span></div>
+            <div class="fact"><b>传说意象</b><span>本专题故事将它与旱象相联系，借古老传说开启对气候与自然的思考。</span></div>
+            <p class="forum-note">说明：本页面为文学与视觉专题，不构成对古籍版本或真实生物的考证。</p>
+          </section>
+        </div>
+        <div class="article-copy">${bibiPuzzle()}</div>
+        <p style="margin-top:28px"><a class="related-link" href="#home" data-route="home">← 返回首页，继续探索</a></p>
+      </article>`;
+    }
+
+    function showAlienLog() {
+      if (document.getElementById("alien-log-backdrop")) return;
+      const backdrop = document.createElement("div");
+      backdrop.className = "alien-log-backdrop";
+      backdrop.id = "alien-log-backdrop";
+      backdrop.setAttribute("role", "dialog");
+      backdrop.setAttribute("aria-modal", "true");
+      backdrop.setAttribute("aria-labelledby", "alien-log-title");
+      backdrop.innerHTML = `<section class="alien-log">
+        <div class="alien-log-label">UNSCHEDULED TRANSMISSION · 深空接收中</div>
+        <h2 id="alien-log-title">外星探测员 · 航行日志</h2>
+        <time datetime="2026-10-03">地球观测周期 04:17:26</time>
+        <p>记录：蓝色行星的平均温度持续上升。沿海漂浮着大量人造聚合物，山林边缘出现干涸河床。我们最初怀疑这里正遭受外部袭击。</p>
+        <p>复核工业、能源与消费痕迹后，威胁来源已确认：并非外来文明。排放由地表居民持续产生；生态损耗来自他们反复做出的日常选择。</p>
+        <p class="alien-log-sign">结论：他们正在伤害自己的家园，却把警报误认为来自星空。</p>
+        <p>我们不介入。留下这段记录，等待其中一个人类听见。</p>
+        <button type="button" data-close-alien-log>接收完毕 · 返回调查</button>
+      </section>`;
+      document.body.appendChild(backdrop);
+      backdrop.querySelector("button").focus();
+    }
+
+    function scheduleAlienLog() {
+      if (!progress.bibi || progress.logSeen) return;
+      progress.logSeen = true;
+      saveProgress();
+      window.setTimeout(() => {
+        if (currentRoute() === "bibi") showAlienLog();
+      }, 900);
+    }
+
+    function renderNotFound() {
+      app.innerHTML = `<section class="page"><div class="article-kicker">页面未找到</div><h1>这条线索暂时没有记录</h1><a class="related-link" href="#home" data-route="home">返回搜索首页 →</a></section>`;
+    }
+
+    function renderLocked(route) {
+      const lockedPage = route === "eco"
+        ? ["环保专题尚未发现", "先解开獙獙档案里的古今对照，环保公益页面才会出现在档案库中。", "獙獙"]
+        : route === "bibi"
+          ? ["古籍档案已加密", "先完成气候报告和山脊信号调查，再搜索「獙獙」打开物种介绍。", "招摇山"]
+          : route === "forum"
+            ? ["论坛信号尚未接通", "先读完外星人报道，并完成现场证据判断，才能接入论坛。", "招摇山"]
+            : ["这条记录尚未发现", "回到搜索页面，从当前已知的线索继续调查。", "气候"];
+      app.innerHTML = `<section class="page">
+        <div class="article-kicker">ACCESS RESTRICTED / 调查档案</div>
+        <h1>${lockedPage[0]}</h1><p class="hero-copy">${lockedPage[1]}</p>
+        <button class="game-button" type="button" data-search="${lockedPage[2]}">返回搜索线索</button>
+      </section>`;
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      })[char]);
+    }
+
+    function render(route, query = "") {
+      document.body.classList.remove("forum-page");
+      backButton.classList.toggle("visible", route !== "home");
+      if (!unlocked(route)) {
+        renderLocked(route);
+        return;
+      }
+      if (route === "home") renderHome(query);
+      else if (route.startsWith("article/")) renderArticle(route.slice("article/".length));
+      else if (route === "forum") renderForum();
+      else if (route === "eco") renderEco();
+      else if (route === "bibi") renderBibi();
+      else renderNotFound();
+      if (route === "bibi") scheduleAlienLog();
+    }
+
+    document.addEventListener("click", event => {
+      const routeLink = event.target.closest("[data-route]");
+      if (routeLink) {
+        event.preventDefault();
+        navigate(routeLink.dataset.route);
+        return;
+      }
+      const searchLink = event.target.closest("[data-search]");
+      if (searchLink) {
+        event.preventDefault();
+        const query = searchLink.dataset.search;
+        if (currentRoute() !== "home") navigate("home");
+        renderHome(query);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        document.getElementById("search-input")?.focus();
+        return;
+      }
+      if (event.target.closest("[data-reset-game]")) {
+        if (window.confirm("确定要清除已解锁的线索，并从头开始调查吗？")) {
+          progress.climate = false;
+          progress.alien = false;
+          progress.bibi = false;
+          progress.environment = false;
+          progress.logSeen = false;
+          saveProgress();
+          navigate("home");
+        }
+        return;
+      }
+      if (event.target.closest("[data-close-alien-log]")) {
+        document.getElementById("alien-log-backdrop")?.remove();
+        return;
+      }
+      const searchButton = event.target.closest("[data-query]");
+      if (searchButton) {
+        renderHome(searchButton.dataset.query);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    });
+
+    document.addEventListener("submit", event => {
+      if (event.target.id !== "search-form") return;
+      event.preventDefault();
+      const query = document.getElementById("search-input").value.trim();
+      if (!query) {
+        document.getElementById("search-input").focus();
+        return;
+      }
+      if (currentRoute() !== "home") navigate("home");
+      renderHome(query);
+    });
+
+    document.addEventListener("submit", event => {
+      if (event.target.id === "forum-comment-form") {
+        event.preventDefault();
+        submitForumComment(event.target);
+        return;
+      }
+      const form = event.target;
+      if (!form.matches("[data-puzzle]")) return;
+      event.preventDefault();
+      const puzzle = form.dataset.puzzle;
+      const feedback = form.querySelector(".puzzle-feedback");
+      let solved = false;
+      if (puzzle === "climate") {
+        const answer = String(new FormData(form).get("answer") || "").trim().replace(/°?\s*c$/i, "");
+        solved = answer !== "" && Number.isFinite(Number(answer)) && Number(answer) === 2;
+        if (!solved) feedback.textContent = "读数不匹配。再看一眼气候图右上角的温度标注。";
+      } else if (puzzle === "alien") {
+        solved = new FormData(form).get("answer") === "unverified";
+        if (!solved) feedback.textContent = "目击记录还不足以证明来源。想想报告里提到的复核步骤。";
+      } else if (puzzle === "bibi") {
+        const answer = new FormData(form);
+        solved = answer.get("drought") === "drought" && answer.get("shape") === "fox";
+        if (!solved) feedback.textContent = "有一项配对不正确。对照档案中的旱象传说和狐形双翼描述再试一次。";
+      } else if (puzzle === "environment") {
+        solved = new FormData(form).get("answer") === "plastic";
+        if (!solved) feedback.textContent = "再看看这两种垃圾最终去了哪里，以及它们会在环境中停留多久。";
+      }
+      if (!solved) return;
+
+      progress[puzzle] = true;
+      saveProgress();
+      render(currentRoute());
+      if (puzzle === "bibi") {
+        scheduleAlienLog();
+        window.setTimeout(() => document.getElementById("alien-log-backdrop")?.scrollIntoView({ block: "center" }), 950);
+      }
+      const solvedMessage = app.querySelector(".puzzle-solved");
+      solvedMessage?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    backButton.addEventListener("click", goBack);
+    window.addEventListener("popstate", event => {
+      if (event.state && Number.isInteger(event.state.routeIndex)) {
+        routeIndex = event.state.routeIndex;
+      } else {
+        routeIndex = 0;
+      }
+      render(currentRoute());
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    const initialRoute = currentRoute();
+    routeStack = [initialRoute];
+    history.replaceState({ deepfind: true, routeIndex: 0 }, "", `#${encodeURIComponent(initialRoute)}`);
+    render(initialRoute);
+  </script>
+</body>
+</html>
